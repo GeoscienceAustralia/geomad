@@ -794,7 +794,7 @@ def __emad(const floating [:, :, :, :] X, const floating [:, :, :] gm,
     cdef float64_t total, value
 
     with nogil, parallel(num_threads=number_of_threads):
-        for row in prange(m, schedule='static'):
+        for row in prange(m, schedule='dynamic'):
             for col in range(q):
                 for t in range(n):
                     # euclidean distance
@@ -820,7 +820,7 @@ def __emad_uint16(const uint16_t [:, :, :, :] X, const floating [:, :, :] gm,
     cdef uint16_t int_value
 
     with nogil, parallel(num_threads=number_of_threads):
-        for row in prange(m, schedule='static'):
+        for row in prange(m, schedule='dynamic'):
             for col in range(q):
                 for t in range(n):
                     # euclidean distance
@@ -845,7 +845,7 @@ def __smad(const floating[:, :, :, :] X, const floating[:, :, :] gm,
     cdef float64_t numer, norma, normb, normb_sqrt, value
 
     with nogil, parallel(num_threads=number_of_threads):
-        for row in prange(m, schedule='static'):
+        for row in prange(m, schedule='dynamic'):
             for col in range(q):
                 normb = 0.
                 for j in range(p):
@@ -879,7 +879,7 @@ def __smad_uint16(const uint16_t [:, :, :, :] X, const floating[:, :, :] gm,
     cdef float64_t scaled
 
     with nogil, parallel(num_threads=number_of_threads):
-        for row in prange(m, schedule='static'):
+        for row in prange(m, schedule='dynamic'):
             for col in range(q):
                 normb = 0.
                 for j in range(p):
@@ -911,7 +911,7 @@ def __bcmad(const floating[:, :, :, :] X, const floating[:, :, :] gm,
     cdef float64_t numer, denom, value
 
     with nogil, parallel(num_threads=number_of_threads):
-        for row in prange(m, schedule='static'):
+        for row in prange(m, schedule='dynamic'):
             for col in range(q):
                 for t in range(n):
 
@@ -940,7 +940,7 @@ def __bcmad_uint16(const uint16_t [:, :, :, :] X, const floating[:, :, :] gm,
     cdef float64_t scaled
 
     with nogil, parallel(num_threads=number_of_threads):
-        for row in prange(m, schedule='static'):
+        for row in prange(m, schedule='dynamic'):
             for col in range(q):
                 for t in range(n):
 
