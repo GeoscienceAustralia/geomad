@@ -783,7 +783,8 @@ def __wgm(const floating [:, :, :, :] X, floating [:, :, :] mX,
         free(R)
 
 
-def __emad(const floating [:, :, :, :] X, const floating [:, :, :] gm, floating [:,:,:] result, int num_threads):
+def __emad(const floating [:, :, :, :] X, const floating [:, :, :] gm,
+           floating [:,:,:] result, const int num_threads=1):
     cdef int number_of_threads = num_threads
     cdef int m = X.shape[0]
     cdef int q = X.shape[1]
@@ -804,8 +805,36 @@ def __emad(const floating [:, :, :, :] X, const floating [:, :, :] gm, floating 
                     result[row, col, t] = sqrt(total)
 
 
+def __emad_uint16(const uint16_t [:, :, :, :] X, const floating [:, :, :] gm,
+                  floating [:,:,:] result, const int num_threads=1,
+                  const uint16_t nodata=0, const floating scale=1e-4,
+                  const floating offset = 0.):
 
-def __smad(const floating[:, :, :, :] X, const floating[:, :, :] gm, floating[:,:,:] result, int num_threads):
+    cdef int number_of_threads = num_threads
+    cdef int m = X.shape[0]
+    cdef int q = X.shape[1]
+    cdef int p = X.shape[2]
+    cdef int n = X.shape[3]
+    cdef int j, t, row, col
+    cdef float64_t total, value
+    cdef uint16_t int_value
+
+    with nogil, parallel(num_threads=number_of_threads):
+        for row in prange(m, schedule='static'):
+            for col in range(q):
+                for t in range(n):
+                    # euclidean distance
+                    total = 0.
+                    for j in range(p):
+                        int_value = X[row, col, j, t]
+                        if int_value != nodata:
+                            value = int_value * scale + offset - gm[row, col, j]
+                            total = total + value*value
+                    result[row, col, t] = sqrt(total)
+
+
+def __smad(const floating[:, :, :, :] X, const floating[:, :, :] gm,
+           floating[:,:,:] result, const int num_threads=1):
     """ """
     cdef int number_of_threads = num_threads
     cdef int m = X.shape[0]
@@ -835,7 +864,43 @@ def __smad(const floating[:, :, :, :] X, const floating[:, :, :] gm, floating[:,
                     result[row, col, t] = 1. - numer/(sqrt(norma)*normb_sqrt)
 
 
-def __bcmad(const floating[:, :, :, :] X, const floating[:, :, :] gm, floating[:,:,:] result, int num_threads):
+def __smad_uint16(const uint16_t [:, :, :, :] X, const floating[:, :, :] gm,
+                  floating[:,:,:] result, const int num_threads=1,
+                  const uint16_t nodata=0, const floating scale=1e-4,
+                  const floating offset=0.):
+    """ """
+    cdef int number_of_threads = num_threads
+    cdef int m = X.shape[0]
+    cdef int q = X.shape[1]
+    cdef int p = X.shape[2]
+    cdef int n = X.shape[3]
+    cdef int j, t, row, col
+    cdef float64_t numer, norma, normb, normb_sqrt, value
+    cdef float64_t scaled
+
+    with nogil, parallel(num_threads=number_of_threads):
+        for row in prange(m, schedule='static'):
+            for col in range(q):
+                normb = 0.
+                for j in range(p):
+                    normb = normb + gm[row, col, j]*gm[row, col, j]
+                normb_sqrt = sqrt(normb)
+
+                for t in range(n):
+                    numer = 0.
+                    norma = 0.
+
+                    for j in range(p):
+                        scaled = X[row, col, j, t] * scale + offset
+                        value = scaled * gm[row, col, j]
+                        numer = numer + value
+                        norma = norma + scaled*scaled
+
+                    result[row, col, t] = 1. - numer/(sqrt(norma)*normb_sqrt)
+
+
+def __bcmad(const floating[:, :, :, :] X, const floating[:, :, :] gm,
+            floating[:,:,:] result, int num_threads=1):
     """ """
     cdef int number_of_threads = num_threads
     cdef int m = X.shape[0]
@@ -859,6 +924,37 @@ def __bcmad(const floating[:, :, :, :] X, const floating[:, :, :] gm, floating[:
 
                     result[row, col, t] = numer / denom
 
+
+def __bcmad_uint16(const uint16_t [:, :, :, :] X, const floating[:, :, :] gm,
+                  floating[:,:,:] result, const int num_threads=1,
+                  const uint16_t nodata=0, const floating scale=1e-4,
+                  const floating offset=0.):
+    """ """
+    cdef int number_of_threads = num_threads
+    cdef int m = X.shape[0]
+    cdef int q = X.shape[1]
+    cdef int p = X.shape[2]
+    cdef int n = X.shape[3]
+    cdef int j, t, row, col
+    cdef float64_t numer, denom, value
+    cdef float64_t scaled
+
+    with nogil, parallel(num_threads=number_of_threads):
+        for row in prange(m, schedule='static'):
+            for col in range(q):
+                for t in range(n):
+
+                    numer = 0.
+                    denom = 0.
+
+                    for j in range(p):
+                        scaled = X[row, col, j, t] * scale + offset
+                        numer = numer + fabs(scaled - gm[row, col, j])
+                        denom = denom + fabs(scaled + gm[row, col, j])
+
+                    result[row, col, t] = numer / denom
+
+
 def __bad_mask(np.ndarray[floating, ndim=4] X):
     """ Input is bad if all observation for a given X,Y location are nan.
         Individual observation is nan if any band value is nan.
@@ -871,9 +967,8 @@ def __bad_mask(np.ndarray[floating, ndim=4] X):
     """
     return np.isnan(X.sum(axis=2)).all(axis=2)
 
-def gm(X, weight=None, maxiters=MAXITERS, floating eps=EPS, num_threads=None, nocheck=False,
-       nodata=None,
-       **kw):
+def gm(X, weight=None, maxiters=MAXITERS, floating eps=EPS, num_threads=None,
+       nocheck=False, nodata=None, **kw):
     """
     Generate a geometric median pixel composite mosaic by reducing along the last axis.
 
@@ -1040,7 +1135,8 @@ def wgm(np.ndarray[floating, ndim=4] X, int bi, int bj, float64_t rho=1.0,
 
     return result
 
-def emad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_threads=None, nocheck=False):
+def emad(X, np.ndarray[floating, ndim=3] gm,
+         num_threads=None, nocheck=False, nodata=None, **kw):
     """
     Generate a Euclidean geometric median absolute deviation pixel
     composite mosaic by reducing along the last axis.
@@ -1073,7 +1169,13 @@ def emad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_th
 
     result = np.empty((m, q, n), dtype=dtype)
 
-    __emad(X, gm, result, num_threads)
+    if nodata is None:
+        nodata = 0
+
+    if X.dtype == np.uint16:
+        __emad_uint16(X, gm, result, num_threads=num_threads, nodata=nodata, **kw)
+    else:
+        __emad(X, gm, result, num_threads=num_threads)
 
     np.seterr(**old)
 
@@ -1083,7 +1185,8 @@ def emad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_th
         return np.median(result, axis=2)
 
 
-def smad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_threads=None, nocheck=False):
+def smad(X, np.ndarray[floating, ndim=3] gm,
+         num_threads=None, nocheck=False, nodata=None, **kw):
     """
     Generate a spectral geometric median absolute deviation pixel
     composite mosaic by reducing along the last axis.
@@ -1119,7 +1222,13 @@ def smad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_th
 
     result = np.empty((m, q, n), dtype=dtype)
 
-    __smad(X, gm, result, num_threads)
+    if nodata is None:
+        nodata = 0
+
+    if X.dtype == np.uint16:
+        __smad_uint16(X, gm, result, num_threads=num_threads, nodata=nodata, **kw)
+    else:
+        __smad(X, gm, result, num_threads=num_threads)
 
     np.seterr(**old)
 
@@ -1129,7 +1238,8 @@ def smad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_th
         return np.median(result, axis=2)
 
 
-def bcmad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_threads=None, nocheck=False):
+def bcmad(X, np.ndarray[floating, ndim=3] gm,
+          num_threads=None, nocheck=False, nodata=None, **kw):
     """
     Generate a bray-curtis geometric median absolute deviation pixel
     composite mosaic by reducing along the last axis.
@@ -1165,7 +1275,13 @@ def bcmad(np.ndarray[floating, ndim=4] X, np.ndarray[floating, ndim=3] gm, num_t
 
     result = np.empty((m, q, n), dtype=dtype)
 
-    __bcmad(X, gm, result, num_threads)
+    if nodata is None:
+        nodata = 0
+
+    if X.dtype == np.uint16:
+        __bcmad_uint16(X, gm, result, num_threads=num_threads, nodata=nodata, **kw)
+    else:
+        __bcmad(X, gm, result, num_threads=num_threads)
 
     np.seterr(**old)
 
