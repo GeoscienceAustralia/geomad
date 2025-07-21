@@ -43,8 +43,8 @@ setup(
     packages=find_packages(".", exclude=['tests']),
     include_package_data=True,
     package_data={'': ['geomad/*.pyx', 'geomad/*.pyx', 'geomad/*.h', 'geomad/*.c']},
-    setup_requires=["Cython>=0.29", "numpy<2", "scipy<1.15"],
-    install_requires=["numpy<2", "scipy<1.15", "astropy"],
+    setup_requires=["Cython>=0.29", "numpy<2"],
+    install_requires=["numpy<2"],
     tests_require=tests_require,
     extras_require={
         'test': tests_require,
