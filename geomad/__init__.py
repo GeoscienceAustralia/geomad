@@ -1,4 +1,5 @@
-# Copyright (C) 2019 Dale Roberts - All Rights Reserved
+# Copyright (c) 2018-2025 Geoscience Australia
+# SPDX-License-Identifier: Apache-2.0
 
 from .pcm import (
     gm as nangeomedian_pcm,

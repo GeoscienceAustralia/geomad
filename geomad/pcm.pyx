@@ -1,5 +1,8 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True, language_level=3, embedsignature=True
 
+# Copyright (c) 2018-2025 Geoscience Australia
+# SPDX-License-Identifier: Apache-2.0
+
 import numpy as np
 
 cimport numpy as np
