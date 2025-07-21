@@ -1,5 +1,5 @@
 """
-hdstats: High-dimensional statistics.
+Geomad: Geomedian and Median Absolute Deviation
 """
 
 import sys
@@ -11,7 +11,6 @@ try:
 except ImportError:
     include_dirs = []
 
-# macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 macros = []
 
 if sys.platform == 'darwin':
@@ -31,7 +30,7 @@ build_cfg = dict(
 print(build_cfg)
 
 extensions = [
-    Extension('hdstats.pcm', ['hdstats/pcm.pyx'], **build_cfg),
+    Extension('geomad.pcm', ['geomad/pcm.pyx'], **build_cfg),
 ]
 
 tests_require = [
@@ -43,7 +42,7 @@ setup(
     name="geomad",
     packages=find_packages(".", exclude=['tests']),
     include_package_data=True,
-    package_data={'': ['hdstats/*.pyx', 'hdstats/*.pyx', 'hdstats/*.h', 'hdstats/*.c']},
+    package_data={'': ['geomad/*.pyx', 'geomad/*.pyx', 'geomad/*.h', 'geomad/*.c']},
     setup_requires=["Cython>=0.29", "numpy<2", "scipy<1.15"],
     install_requires=["numpy<2", "scipy<1.15", "astropy"],
     tests_require=tests_require,
