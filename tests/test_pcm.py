@@ -4,7 +4,6 @@ import numpy.testing as npt
 import numpy as np
 import geomad
 import joblib
-import pytest
 
 
 class TestPixelCompositeMosaic:
