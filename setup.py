@@ -11,8 +11,6 @@ try:
 except ImportError:
     include_dirs = []
 
-macros = []
-
 if sys.platform == 'darwin':
     # Needs openmp lib installed: brew install libomp
     cc_flags = ["-I/usr/local/include", "-Xpreprocessor", "-fopenmp"]
@@ -25,7 +23,6 @@ build_cfg = dict(
     include_dirs=include_dirs,
     extra_compile_args=cc_flags,
     extra_link_args=ld_flags,
-    define_macros=macros,
 )
 print(build_cfg)
 
@@ -45,11 +42,10 @@ setup(
     package_data={'': ['geomad/*.pyx', 'geomad/*.pyx', 'geomad/*.h', 'geomad/*.c']},
     setup_requires=["Cython>=0.29", "numpy<2"],
     install_requires=["numpy<2"],
-    tests_require=tests_require,
     extras_require={
         'test': tests_require,
     },
-    version="1.0.0-rc1",
+    version="1.0.0rc1",
     description="Geomad.",
     url="http://github.com/GeoscienceAustralia/geomad",
     author="GeoscienceAustralia",
