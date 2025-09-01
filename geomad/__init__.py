@@ -8,3 +8,11 @@ from .pcm import (
     smad as smad_pcm,
     bcmad as bcmad_pcm,
 )
+
+__all__ = [
+    "nangeomedian_pcm",
+    "nanwgeomedian_pcm",
+    "emad_pcm",
+    "smad_pcm",
+    "bcmad_pcm"
+]
