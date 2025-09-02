@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools>74.1", "wheel", "Cython>=0.29", "numpy", "setuptools_scm[toml]>=8"]
+requires = ["setuptools>74.1", "wheel", "Cython>=0.29", "numpy>=2", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project.urls]
