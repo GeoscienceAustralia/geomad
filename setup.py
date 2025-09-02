@@ -3,7 +3,7 @@ Geomad: Geomedian and Median Absolute Deviation
 """
 
 import sys
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 
 try:
     import numpy as np
