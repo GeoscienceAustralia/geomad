@@ -1,6 +1,11 @@
 # Copyright (c) 2018-2025 Geoscience Australia
 # SPDX-License-Identifier: Apache-2.0
 
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "Unknown/Not Installed"
+
 from .pcm import (
     gm as nangeomedian_pcm,
     wgm as nanwgeomedian_pcm,
